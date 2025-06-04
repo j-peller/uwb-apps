@@ -92,6 +92,31 @@ or if you have nrfjprog ([Nordic Cmd Tools](https://www.nordicsemi.com/Software-
     $ nrfjprog -f NRF52 -e
 ```
 
+5. Install the correct version of ARM Toolchain
+
+Download for Linux 32-bit: https://developer.arm.com/downloads/-/gnu-rm/5-2016-q3-update
+
+```
+bzip2 -d gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
+tar -xvf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar
+
+mv gcc-arm-none-eabi-5_4-2016q3/ /opt/
+
+export PATH=/opt/gcc-arm-none-eabi-5_4-2016q3/bin:$PATH
+source ~/.bashrc
+
+/* check if working */
+arm-none-eabi-gcc --version
+```
+
+If 32bit not supported on your current system:
+
+```
+dpkg --add-architecture i386
+apt update
+apt install libc6:i386
+apt install libc6:i386 libstdc++6:i386
+```
 
 5. Build the new bootloader applicaiton for the DWM1001 target.
 
