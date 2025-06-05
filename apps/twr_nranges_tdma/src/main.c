@@ -104,7 +104,7 @@ struct uwbcfg_cbs uwb_cb = {
 
 struct nrng_pair {
 	uint16_t uid;
-	uint16_t rng_mm;
+	uint16_t rng_m;
 };
 
 struct nrng_measurement {
@@ -145,6 +145,20 @@ static void send_nrng_measurements(struct nrng_measurement *nrng_meas)
 				 0xDEAD, 0, mbuf);
 }
 
+static void print_nrng_measurements(struct nrng_measurement *nrng_meas)
+{
+    unsigned i;
+    printf("{\"utime\": %llu, \"seq\": %llu, \"uid\": %u, \"rngs\": [",
+           nrng_meas->utime, nrng_meas->seq_num, nrng_meas->uid);
+    for (i = 0; i < nrng_meas->nrngs; i++) {
+        printf("{\"uid\": %u, \"rng\": %u}%s",
+               nrng_meas->rngs[i].uid,
+               nrng_meas->rngs[i].rng_mm,
+               i + 1 < nrng_meas->nrngs ? "," : "");
+    }
+    printf("]}\n");
+}
+
 static void nrng_complete_cb(struct dpl_event *ev)
 {
 	struct nrng_instance *nrng;
@@ -180,11 +194,12 @@ static void nrng_complete_cb(struct dpl_event *ev)
 
 		pair = &nrng_meas.rngs[nrngs++];
 		pair->uid    = frame->dst_address;
-		pair->rng_mm = rng * 1000;
+		pair->rng_mm = rng; //< Range in meters
 	}
 	nrng_meas.nrngs = nrngs;
 
-	send_nrng_measurements(&nrng_meas);
+    /* print out range information to UART */
+	print_nrng_measurements(&nrng_meas);
 }
 
 static struct dpl_event nrng_complete_event;
