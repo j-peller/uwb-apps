@@ -20,43 +20,43 @@
 -->
 
 # Decawave UWB Applications
-[![Build Status](https://travis-ci.org/Decawave/uwb-apps.svg?branch=master)](https://travis-ci.org/Decawave/uwb-apps)
 
 ## Overview
 
-This distribution contains the example applications for the DW1000 UWB transceiver.
-
-## Getting hardware
-
-* DWM1001   from https://www.decawave.com/products/dwm1001-module
-* lps2mini  from https://lohmega.com
+This distribution contains the example applications `twr_nranges_tdma` for the DWM1001.
 
 ## Getting started
 
-The remainder of this README.md shows how to bring up the elementary twr_node/twr_tag examples.
+1. Download and install Apache Newt or follow the guide here: https://mynewt.apache.org/latest/newt/install/newt_linux.html
 
-1. Download and install Apache Newt.
+```
+wget https://raw.githubusercontent.com/JuulLabs-OSS/binary-releases/master/mynewt-newt-tools_1.10.0/newt_1.10.0-1_amd64.deb
 
-You will need to download the Apache Newt tool, as documented in the [Getting Started Guide](http://mynewt.apache.org/latest/get_started/index.html).
-
-Prerequisites: You should follow the generic tutorials at http://mynewt.apache.org/latest/tutorials/tutorials.html, particularly the basic Blinky example that will guide you through the basic setup.
-
-2. Download the UWB apps repository.
-
-```no-highlight
-    git clone git@github.com:Decawave/uwb-apps.git
-    cd uwb-apps
+dpkg -i newt_1.10.0-1_amd64.deb
 ```
 
-3. Running the ```newt upgrade``` command downloads the apache-mynewt-core, decawave-uwb-core, decawave-uwb-dwXXXX driver(s) repo, and mynewt-timescale-lib packages, these are dependent repos of the decawave-uwb-apps project and are automatically checked-out by the newt tools.
+2. Download and install nrfjprog ([Nordic Cmd Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download))
+
+```
+# this is for amd64
+wget https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x/10-24-2/nrf-command-line-tools_10.24.2_amd64.deb
+
+dpkg -i nrf-command-line-tools_10.24.2_amd64.deb
+
+# install recommended JLink 
+apt install /opt/nrf-command-line-tools/share/JLink_Linux_V794e_arm64.deb --fix-broken
+```
+
+3. Download the UWB apps repository.
 
 ```no-highlight
-$ newt upgrade
-# Depending on what version of the newt tool you use you
-# may have to manually remove git-but artifacts and then rerun
-# upgrade. I.e. only if you see an error like:
-# "Error: Error updating "mcuboot"..." do:
-rm repos/mcuboot/ext/mbedtls/include/mbedtls/ -rf
+git clone git@github.com:j-peller/uwb-apps.git
+cd uwb-apps
+```
+
+4. Running the ```newt upgrade``` command downloads the apache-mynewt-core, decawave-uwb-core, decawave-uwb-dwXXXX driver(s) repo, and mynewt-timescale-lib packages, these are dependent repos of the decawave-uwb-apps project and are automatically checked-out by the newt tools.
+
+```no-highlight
 newt upgrade
 ```
 
@@ -64,9 +64,8 @@ To see if you have access to other driver repos, run the setup.sh
 script under repos/decawave-uwb-core like so:
 
 ```
-repos/decawave-uwb-core/setup.sh
-# Rerun newt install
-newt install
+    repos/decawave-uwb-core/setup.sh
+    newt upgrade
 ```
 
 Apply any patches to apache-mynewt-core:
@@ -74,25 +73,17 @@ Apply any patches to apache-mynewt-core:
 ```
 cd repos/apache-mynewt-core/
 git apply ../decawave-uwb-core/patches/apache-mynewt-core/mynewt_1_7_0_*
+git apply ../decawave-uwb-core/patches/apache-mynewt-core/mynewt_1_8_*
 cd -
 ```
 
-4. To erase the default flash image that shipped with the DWM1001.
-
-```no-highlight
-$ JLinkExe -device nRF52 -speed 4000 -if SWD
-J-Link>erase
-J-Link>exit
-$
-```
-
-or if you have nrfjprog ([Nordic Cmd Tools](https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download)) installed:
+5. Erase the default flash image that shipped with the DWM1001.
 
 ```
     $ nrfjprog -f NRF52 -e
 ```
 
-5. Install the correct version of ARM Toolchain
+6. Install the correct version of ARM Toolchain
 
 Download for Linux 32-bit: https://developer.arm.com/downloads/-/gnu-rm/5-2016-q3-update
 
@@ -113,62 +104,136 @@ If 32bit not supported on your current system:
 
 ```
 dpkg --add-architecture i386
+
+echo "deb http://security.ubuntu.com/ubuntu focal-security main universe" | sudo tee /etc/apt/sources.list.d/focal-security.list
+
 apt update
-apt install libc6:i386
-apt install libc6:i386 libstdc++6:i386
+apt install libc6:i386 libstdc++6:i386 libncurses5:i386
 ```
 
-5. Build the new bootloader applicaiton for the DWM1001 target.
+### Build bootloader
 
-(executed from the mynewt-dw1000-app directory).
+Builds bootloader applicaiton for the DWM1001 target. Bootloader should be flashed first for each DWM1001 module regardless of the role:
 
 ```no-highlight
-
 newt target create dwm1001_boot
 newt target set dwm1001_boot app=@mcuboot/boot/mynewt
 newt target set dwm1001_boot bsp=@decawave-uwb-core/hw/bsp/dwm1001
 newt target set dwm1001_boot build_profile=optimized
 newt build dwm1001_boot
+
+# Execute for _each_ DWM1001 module
+newt load dwm1001_boot
+```
+
+### Master module
+
+Only one module among anchors which acts as a master is allowed per network. In this configuration it is possible to have 4 anchors minimum and up to 8 modules:
+
+```no-highlight
+# dont forget to flash the boot loader first
 newt load dwm1001_boot
 
+# now start flashing twr firmware 
+newt target create nrng_master
+newt target set nrng_master app=apps/twr_nranges_tdma
+newt target set nrng_master bsp=@decawave-uwb-core/hw/bsp/dwm1001
+newt target set nrng_master build_profile=optimized
+
+# Disable additional debug output
+newt target amend nrng_master syscfg=NRNG_VERBOSE=0:SURVEY_ENABLED=0
+
+# Disable RTT enable UART
+newt target amend nrng_master syscfg=CONSOLE_RTT=0:CONSOLE_UART=1
+
+# Configure number of nodes and frames
+newt target amend nrng_master syscfg=NRNG_NFRAMES=16:NRNG_NNODES=8:NRNG_NTAGS=4:NODE_START_SLOT_ID=0:NODE_END_SLOT_ID=7
+
+# Configure role
+newt target amend nrng_master syscfg=PANMASTER_ISSUER=1:UWB_TRANSPORT_ROLE=0
+
+newt create-image nrng_master 1.0.0
+
+# this flashes the image onto the dwm1001, ensure usb connectivity
+newt load nrng_master
 ```
 
-6. On the first DWM1001-DEV board build the Two-Way-Ranging (twr_tag_tdma) application for the DWM1001 module. The run command compiles the project and loads the image on the target platform.
+### Slave modules
 
-(executed from the decawave-uwb-apps directory).
+All other non-master anchors should be configured as slaves:
 
 ```no-highlight
+# dont forget to flash the boot loader first
+newt load dwm1001_boot
 
-newt target create twr_tag_tdma
-newt target set twr_tag_tdma app=apps/twr_tag_tdma
-newt target set twr_tag_tdma bsp=@decawave-uwb-core/hw/bsp/dwm1001
-newt target set twr_tag_tdma build_profile=debug
-newt run twr_tag_tdma 0
+# now start flashing twr firmware 
+newt target create nrng_slave
+newt target set nrng_slave app=apps/twr_nranges_tdma
+newt target set nrng_slave bsp=@decawave-uwb-core/hw/bsp/dwm1001
+newt target set nrng_slave build_profile=optimized
 
+# Disable additional debug output
+newt target amend nrng_slave syscfg=NRNG_VERBOSE=0:SURVEY_ENABLED=0
+
+# Disable RTT and UART
+newt target amend nrng_slave syscfg=CONSOLE_RTT=0:CONSOLE_UART=1
+
+# Configure number of nodes and frames
+newt target amend nrng_slave syscfg=NRNG_NFRAMES=16:NRNG_NNODES=8:NRNG_NTAGS=4:NODE_START_SLOT_ID=0:NODE_END_SLOT_ID=7
+
+# Configure role
+newt target amend nrng_slave syscfg=NRANGES_ANCHOR=1:UWB_TRANSPORT_ROLE=0
+
+newt create-image nrng_slave 1.0.0
+
+# this flashes the image onto the dwm1001, ensure usb connectivity
+newt load nrng_slave
 ```
 
-7. On a second DWM1001-DEV board build the node side of the Two-Way-Ranging (twr_node_tdma) application as follows.
+### Tag module
 
-(executed from the decawave-uwb-apps directory).
+Only one module acts as a tag and is mounted on the ANAFI drone:
 
 ```no-highlight
+# dont forget to flash the boot loader first
+newt load dwm1001_boot
 
-newt target create twr_node_tdma
-newt target set twr_node_tdma app=apps/twr_node_tdma
-newt target set twr_node_tdma bsp=@decawave-uwb-core/hw/bsp/dwm1001
-newt target set twr_node_tdma build_profile=debug
-newt target amend twr_node_tdma syscfg=LOG_LEVEL=1:UWBCFG_DEF_ROLE='"0x1"'
-newt run twr_node_tdma 0
+# now start flashing twr firmware 
+newt target create nrng_tag
+newt target set nrng_tag app=apps/twr_nranges_tdma
+newt target set nrng_tag bsp=@decawave-uwb-core/hw/bsp/dwm1001
+newt target set nrng_tag build_profile=optimized
 
+# Disable additional debug output
+newt target amend nrng_tag syscfg=NRNG_VERBOSE=0:SURVEY_ENABLED=0
+
+# Disable RTT and UART
+newt target amend nrng_tag syscfg=CONSOLE_RTT=0:CONSOLE_UART=0
+
+# Configure number of nodes and frames
+newt target amend nrng_tag syscfg=NRNG_NFRAMES=16:NRNG_NNODES=8:NRNG_NTAGS=4:NODE_START_SLOT_ID=0:NODE_END_SLOT_ID=7
+
+# Configure role
+newt target amend nrng_tag syscfg=UWB_TRANSPORT_ROLE=1
+
+newt create-image nrng_tag 1.0.0
+
+# this flashes the image onto the dwm1001, ensure usb connectivity
+newt load nrng_tag
 ```
 
+**!!!!! Don't forget to load bootloader for each module !!!!!**
 
-8. Both examples are configured to use the Segger RTT console interface. This is covered within the mynewt tutorials/Tooling/SeggerRTT (http://mynewt.apache.org/latest/tutorials/tooling/segger_rtt.html). To launch the console simply telnet localhost 19021. Note at time of writing the newt tools does not support multiple connect dwm1001-dev devices. So it is recomended that you connect twr_tag_tdma and twr_node_tdma examples to different computers or at least the twr_tag_tdma to an external battery. If all goes well you should see the twr_node_tdma example stream range information on the console. 
+## Test your Anchor and Tag
+1. Connect the Anchor to a power source 
 
-(executed from the decawave-uwb-apps directory).
+2. Connect the Tag to your PC and access it via UART (typically /dev/ttyACMX or /dev/ttyUSBX)
 
-```no-highlight
-
-nc localhost 19021
-
+Use either putty or minicom...
 ```
+minicom -D /dev/ttyACM0 -b 460800
+```
+
+This launches the interactive command shell of the DWM1001 firmware running on the Tag. Once initialized, the Tag should automatically detect the powered Anchor and begin outputting measured distances to the console.
+
+If you disconnect the Anchor, the output will stop. You can power on additional Anchors at any time—each will be automatically recognized by the Tag and included in the distance measurements.

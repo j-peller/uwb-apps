@@ -104,7 +104,7 @@ struct uwbcfg_cbs uwb_cb = {
 
 struct nrng_pair {
 	uint16_t uid;
-	uint16_t rng_m;
+	uint16_t rng_mm;
 };
 
 struct nrng_measurement {
@@ -120,6 +120,7 @@ struct nrng_measurement {
 static struct nrng_measurement nrng_meas;
 static struct _uwb_transport_instance *uwb_transport;
 
+__attribute__((unused)) /* unused for UWB_TRANSPORT_LISTENER role */
 static void send_nrng_measurements(struct nrng_measurement *nrng_meas)
 {
         struct dpl_mbuf * mbuf;
@@ -194,7 +195,7 @@ static void nrng_complete_cb(struct dpl_event *ev)
 
 		pair = &nrng_meas.rngs[nrngs++];
 		pair->uid    = frame->dst_address;
-		pair->rng_mm = rng; //< Range in meters
+		pair->rng_mm = rng * 1000; //< Range in millimeters
 	}
 	nrng_meas.nrngs = nrngs;
 
