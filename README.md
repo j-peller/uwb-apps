@@ -192,7 +192,7 @@ newt load nrng_slave
 
 ### Tag module
 
-Only one module acts as a tag and is mounted on the ANAFI drone:
+Only one module acts as a tag and is mounted on the drone, connected to the Raspberry Pi 5 via UART
 
 ```no-highlight
 # dont forget to flash the boot loader first
@@ -208,7 +208,7 @@ newt target set nrng_tag build_profile=optimized
 newt target amend nrng_tag syscfg=NRNG_VERBOSE=0:SURVEY_ENABLED=0
 
 # Disable RTT and UART
-newt target amend nrng_tag syscfg=CONSOLE_RTT=0:CONSOLE_UART=0
+newt target amend nrng_tag syscfg=CONSOLE_RTT=0:CONSOLE_UART=1
 
 # Configure number of nodes and frames
 newt target amend nrng_tag syscfg=NRNG_NFRAMES=16:NRNG_NNODES=8:NRNG_NTAGS=4:NODE_START_SLOT_ID=0:NODE_END_SLOT_ID=7
