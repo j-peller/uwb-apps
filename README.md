@@ -74,8 +74,11 @@ Dann muss man mit besagter Anleitung das angeschlossene Dev-Kit in der WSL sicht
 Nun wenn alles angeschlossen und eingerichtet ist, kann man die Defaultinstallation so löschen:
 
 ```
-    $ nrfjprog -f NRF52 -e
+nrfjprog -f NRF52 -e
 ```
+
+**Warnung für WSL-Nutzer**
+Unter WSL und Nutzung von usbipd kann sich das USB-Device disconnecten. Wenn das passiert, einfach neu den bind und attach Befehl von usbipd ausführen.
 
 6. Installation der ARM-Toolchain
 
@@ -108,6 +111,10 @@ source ~/.bashrc
 /* check if working */
 arm-none-eabi-gcc --version
 ```
+
+## Bauen der zu flashenden Artefakte
+
+Es muss immer der Bootloader gebaut und geflasht werden. Dann kann man den jeweiligen Schritt machen, den man braucht, sprich Master, Slave oder Tag.
 
 ### Build bootloader
 
