@@ -229,17 +229,26 @@ newt load nrng_tag
 
 **!!!!! Don't forget to load bootloader for each module !!!!!**
 
-## Test your Anchor and Tag
-1. Connect the Anchor to a power source 
+## Testen der Distanzmessung
 
-2. Connect the Tag to your PC and access it via UART (typically /dev/ttyACMX or /dev/ttyUSBX)
+1. Ein Dev-Kit als Tag flashen und einen zweiten als Master flashen.
 
-Use either putty or minicom...
+2. Tag via USBmit dem Hostrechner verbinden und Master mit einer Stromquelle verbinden. 
+
+2. Verbinden des Tags an den Hostrechner mit der seriellen Schnittstelle via UART (typically /dev/ttyACMX or /dev/ttyUSBX):
+
+Für Putty serielle Schnittstelle auswählen und als Speed 460800 einstellen.
+
+Hinweis für Windowsnutzer: Im Gerätemanager kann man den COM-Port herausfinden, an dem der Tag hängt (COM1, COM2 oder COM3 usw.).
+
+Minicom Kommando (/dev/ttyACM0 muss ggf. mit der korrekten Schnittstelle ersetzt werden):
 ```
 minicom -D /dev/ttyACM0 -b 460800
 ```
 
-This launches the interactive command shell of the DWM1001 firmware running on the Tag. Once initialized, the Tag should automatically detect the powered Anchor and begin outputting measured distances to the console.
+In der interaktiven Konsole sollten, soweit Master und Tag funktionsfähig sind, die Daten der Distanzmessung zu sehen sein.
+
+---
 
 Ab hier die ursprüngliche Dokumentation:
 
