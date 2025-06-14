@@ -104,7 +104,7 @@ struct uwbcfg_cbs uwb_cb = {
 
 struct nrng_pair {
 	uint16_t uid;
-	uint16_t rng_mm;
+	uint32_t rng_mm;
 };
 
 struct nrng_measurement {
@@ -152,7 +152,7 @@ static void print_nrng_measurements(struct nrng_measurement *nrng_meas)
     printf("{\"utime\": %llu, \"seq\": %llu, \"uid\": %u, \"rngs\": [",
            nrng_meas->utime, nrng_meas->seq_num, nrng_meas->uid);
     for (i = 0; i < nrng_meas->nrngs; i++) {
-        printf("{\"uid\": %u, \"rng\": %u}%s",
+        printf("{\"uid\": %u, \"rng\": %lu}%s",
                nrng_meas->rngs[i].uid,
                nrng_meas->rngs[i].rng_mm,
                i + 1 < nrng_meas->nrngs ? "," : "");
